@@ -8,15 +8,6 @@ Char = NewType('Char', str)
 Vector = list[Bit]
 T = TypeVar("T")
 
-class VerseType(Enum):
-    HIDE = "HIDE"
-    FILL = "FILL"
-
-class Status(Enum):
-    SUCCESS = "SUCCESS"
-    ERROR = "ERROR"
-    UNINITIALIZED = "-"
-
 class MessageType(Enum):
     SYSTEM = "SYSTEM"
     ASSISTANT = "ASSISTANT"

@@ -16,34 +16,34 @@ from whisper.stegano_db import SteganoDb, Section, Bit
 class TestSteganoDb(unittest.TestCase):
 
     def test_db(self):
-        inputs: list[list[Union[str, str, str, Bit]]] = [
-            ['V1', "hash1", "md4", cast(Bit, 0)],
-            ['V2', "hash2", "md5", cast(Bit, 1)],
-            ['V3', "hash3", "sha224", cast(Bit, 0)],
+        inputs: list[list[Union[str, str, Bit]]] = [
+            ['V1', cast(Bit, 0), "TV1"],
+            ['V2', cast(Bit, 1), "TV2"],
+            ['V3', cast(Bit, 1), "TV3"],
         ]
         db_path = os.path.abspath(os.path.join(CURRENT_DIR, 'db.sqlite3'))
 
         with SteganoDb(db_path) as file_db:
             for i in range(len(inputs)):
                 v: list[Union[str, str, str, Bit]] = inputs[i]
-                file_db.add_section(i, v[0], v[1], v[2], v[3])
+                file_db.add_original_text(i, v[0])
+                file_db.set_expected_bit(i, v[1])
+                file_db.set_traduction(i, v[2])
 
             self.assertEqual(len(file_db), len(inputs))
             for i in range(len(inputs)):
                 section: Section = file_db.get_section_by_position(i)
                 self.assertEqual(section.position, i)
-                self.assertEqual(section.section, inputs[i][0])
-                self.assertEqual(section.hash_value, inputs[i][1])
-                self.assertEqual(section.hash_type, inputs[i][2])
-                self.assertEqual(section.bit, inputs[i][3])
+                self.assertEqual(section.original_text, inputs[i][0])
+                self.assertEqual(section.expected_bit, inputs[i][1])
+                self.assertEqual(section.traduction, inputs[i][2])
 
             position: int = 0
             for section in file_db.get_sections():
                 self.assertEqual(section.position, position)
-                self.assertEqual(section.section, inputs[position][0])
-                self.assertEqual(section.hash_value, inputs[position][1])
-                self.assertEqual(section.hash_type, inputs[position][2])
-                self.assertEqual(section.bit, inputs[position][3])
+                self.assertEqual(section.original_text, inputs[position][0])
+                self.assertEqual(section.expected_bit, inputs[position][1])
+                self.assertEqual(section.traduction, inputs[position][2])
                 position += 1
 
 if __name__ == '__main__':

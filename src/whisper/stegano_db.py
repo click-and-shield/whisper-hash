@@ -9,10 +9,9 @@ from .types import Bit
 @dataclass
 class Section:
     position: int
-    section: str
-    hash_value: str
-    hash_type: str
-    bit: Bit
+    original_text: str
+    expected_bit: Optional[Bit]
+    traduction: Optional[str]
 
 class SteganoDb:
 
@@ -26,10 +25,9 @@ class SteganoDb:
             try:
                 cursor.execute("""CREATE TABLE IF NOT EXISTS t ("idx" INTEGER PRIMARY KEY,
                                                                 "position" INTEGER NOT NULL,
-                                                                "section" TEXT NOT NULL,
-                                                                "hash_type" TEXT NOT NULL,
-                                                                "hash_value" TEXT NOT NULL,
-                                                                "bit" integer DEFAULT NULL)
+                                                                "original_text" TEXT NOT NULL,
+                                                                "expected_bit" integer DEFAULT NULL,
+                                                                "traduction" TEXT DEFAULT NULL)
                                """)
             finally:
                 cursor.close()
@@ -55,11 +53,26 @@ class SteganoDb:
             print("Unable to remove file: " + str(self.db_file_path), flush=True)
         self.db = None
 
-    def add_section(self, position: int, section: str, hash_value: str, hash_type: str, bit: Bit) -> None:
+    def add_original_text(self, position: int, original_text: str) -> None:
         cursor = self.db.cursor()
         try:
-            cursor.execute('INSERT INTO t ("position", "section", "hash_value", "hash_type", "bit")'
-                           'VALUES (?, ?, ?, ?, ?)', (position, section, hash_value, hash_type, bit))
+            cursor.execute('INSERT INTO t ("position", "original_text") VALUES (?, ?)', (position, original_text,))
+        finally:
+            cursor.close()
+        self.db.commit()
+
+    def set_expected_bit(self, position: int, expected_bit: Bit) -> None:
+        cursor = self.db.cursor()
+        try:
+            cursor.execute('UPDATE t SET "expected_bit"=? WHERE "position"=?', (expected_bit, position,))
+        finally:
+            cursor.close()
+        self.db.commit()
+
+    def set_traduction(self, position: int, traduction: str) -> None:
+        cursor = self.db.cursor()
+        try:
+            cursor.execute('UPDATE t SET "traduction"=? WHERE "position"=?', (traduction, position,))
         finally:
             cursor.close()
         self.db.commit()
@@ -67,12 +80,12 @@ class SteganoDb:
     def get_section_by_position(self, position: int) -> Section:
         cursor = self.db.cursor()
         try:
-            row = cursor.execute('SELECT "idx", "position", "section", "hash_value", "hash_type", "bit"  FROM t WHERE "position"=?', (position,)).fetchone()
+            row = cursor.execute('SELECT "idx", "position", "original_text", "expected_bit", "traduction" FROM t WHERE "position"=?', (position,)).fetchone()
             if row is None:
                 raise ValueError("Invalid position: {}".format(position))
         finally:
             cursor.close()
-        return Section(position=row[1], section=row[2], hash_value=row[3], hash_type=row[4], bit=row[5])
+        return Section(position=row[1], original_text=row[2], expected_bit=row[3], traduction=row[4])
 
     def __len__(self) -> int:
         cursor = self.db.cursor()
@@ -85,10 +98,7 @@ class SteganoDb:
     def get_sections(self) -> Generator[Section, None, None]:
         cursor = self.db.cursor()
         try:
-            for row in cursor.execute('SELECT "position", "section", "hash_value", "hash_type", "bit" FROM t ORDER BY "position"'):
-                yield Section(position=row[0], section=row[1], hash_value=row[2], hash_type=row[3], bit=row[4])
+            for row in cursor.execute('SELECT "idx", "position", "original_text", "expected_bit", "traduction" FROM t ORDER BY "position"'):
+                yield Section(position=row[1], original_text=row[2], expected_bit=row[3], traduction=row[4])
         finally:
             cursor.close()
-
-
-

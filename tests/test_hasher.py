@@ -1,6 +1,7 @@
 # Usage:
 # python3 -m unittest -v test_hasher.py
 
+from typing import Optional
 import unittest
 import os
 import sys
@@ -22,10 +23,12 @@ class TestDiskList(unittest.TestCase):
         print('ALGO COUNT   = {}'.format(len(ALGORITHMS)))
 
         counter: int = 0
+        last_hash: Optional[bytes] = None
         for text in texts:
             print('%-3d: ' % counter, end='')
-            algo: str = hasher.next_hash_algorithm()
+            algo: str = hasher.next_hash_algorithm(last_hash)
             h, p = hasher.get_parity(algo, text)
+            last_hash = h
             self.assertTrue(p == 0 or p == 1)
             self.assertEqual(len(h), KEY_LENGTH)
             counter += 1

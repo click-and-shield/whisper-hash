@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 import hashlib
 from .params import KEY_LENGTH
 from argon2.low_level import hash_secret_raw, Type
@@ -25,21 +25,23 @@ class Hasher:
             type=Type.ID
         )
         self.hash_algorithm_index: int = 0
-        self.last_hash: bytes = bytes(KEY_LENGTH)
         self.verbose: bool = verbose
 
-    def update(self) -> None:
-        self.key = xor_bytes(self.key, self.last_hash)
+    def update(self, last_hash: bytes) -> None:
+        self.key = xor_bytes(self.key, last_hash)
         self.hash_algorithm_index = 0
 
-    def next_hash_algorithm(self) -> str:
+    def next_hash_algorithm(self, last_hash: Optional[bytes]) -> Optional[str]:
         if self.hash_algorithm_index >= KEY_LENGTH:
-            self.update()
+            if last_hash is None:
+                raise ValueError("Unexpected last hash value (lash hash should not be None).")
+            self.update(last_hash)
         i: int = self.key[self.hash_algorithm_index] % len(ALGORITHMS)
         self.hash_algorithm_index += 1
         return ALGORITHMS[i]
 
-    def hash(self, algo: str, data: str) -> Tuple[str, bytes]:
+    @staticmethod
+    def hash(algo: str, data: str) -> bytes:
         h: bytes = hashlib.new(algo, data.encode()).digest()
         key: bytes = hash_secret_raw(
             secret=h,
@@ -50,11 +52,10 @@ class Hasher:
             hash_len=KEY_LENGTH,
             type=Type.ID
         )
-        self.last_hash = key
-        return algo, key
+        return key
 
     def get_parity(self, algo: str, data: str) -> Tuple[bytes, int]:
-        algo, h = self.hash(algo, data)
+        h = self.hash(algo, data)
         p: int = sum(c for c in h) % 2
         if self.verbose:
             print('%-10s: %s %s -> %d' %(algo, h.hex(), self.key.hex(), p))

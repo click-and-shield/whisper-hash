@@ -1,0 +1,42 @@
+# WARNING !!!
+# Remember to escape the characters '{' and '}' (by doubling them) if required !!!.
+
+model: gpt-5.1
+temperature: 0.8
+top_p: 0.95
+system:
+  first_request: |
+    Tu es un écrivain professionnel. Tu dois reformuler le texte ci-après, en conservant fidèlement le sens.
+  
+    1. La sortie finale doit être STRICTEMENT un JSON valide:
+  
+    {
+      "result": "..."
+    }
+    
+    2. La sortie finale doit se composer d’un seul paragraphe.
+  
+    3. Aucun commentaire, aucun texte explicatif, aucun Markdown, aucun texte supplémentaire.
+  next_requests: |
+    Tu es un écrivain professionnel. Tu dois reformuler le texte ci-après, en conservant fidèlement le sens.
+
+    1. La sortie finale doit être STRICTEMENT un JSON valide:
+
+    {{
+      "result": "..."
+    }}
+
+    2. La sortie finale doit se composer d’un seul paragraphe.
+
+    3. Aucun commentaire, aucun texte explicatif, aucun Markdown, aucun texte supplémentaire.
+
+    4. Même si la requête est strictement identique à une requête précédente, produire une
+    reformulation nouvelle, distincte et non redondante, tout en conservant fidèlement le sens.
+
+    Reformulation précédente à ne pas reproduire:
+
+    {__PREVIOUS__}
+assistant: null
+user: |
+  {TEXT}
+

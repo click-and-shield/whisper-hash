@@ -1,5 +1,9 @@
 # Usage:
-#   python hide.py --debug --dry-run --verbose --token /home/dev/.token secret-key ../test-data/needle.txt ../test-data/haystack.txt output.txt
+#
+#   DRY-RUM:
+#      python hide.py --debug --dry-run --verbose --token /home/dev/.token ../test-data/config.yaml secret-key ../test-data/needle.txt ../test-data/haystack.txt output.txt
+#   NORMAL-RUN:
+#      python hide.py --debug --verbose --token /home/dev/.token ../test-data/config.yaml secret-key ../test-data/needle.txt ../test-data/haystack.txt output.txt
 
 from typing import Optional
 import argparse
@@ -16,6 +20,7 @@ print("Set search path: {}".format(SEARCH_PATH))
 sys.path.insert(0, SEARCH_PATH)
 
 from whisper.whisperer import Whisperer, Params
+from whisper.config import Config, load_config
 import whisper.api_tools
 
 def get_script_dir() -> Path:
@@ -61,18 +66,15 @@ if __name__ == '__main__':
                         required=False,
                         default=default_debug_path,
                         help='path to the directory used to store DEBUG data (default: "{}")'.format(default_debug_path))
-    parser.add_argument('--model',
-                        dest='model',
-                        type=str,
-                        required=False,
-                        default=default_model,
-                        help='name of the model to use (ex: "gpt-5.1", "gpt-4.1", "gpt-4.1-mini"...) - default: "{}"'.format(default_model))
     parser.add_argument('--token',
                         dest='token',
                         type=str,
                         required=False,
                         default=default_tokens_path,
                         help='path to the file containing the token to use for ChatGPT API (default: "{}")'.format(default_tokens_path))
+    parser.add_argument('config',
+                        type=str,
+                        help='path to the YAML configuration file')
     parser.add_argument('key',
                         type=str,
                         help='secret key to use for hiding the text file')
@@ -91,11 +93,11 @@ if __name__ == '__main__':
     dry_run_flag: bool = args.dry_run_flag
     debug_flag: bool = args.debug_flag
     debug_dir: str = args.debug_dir
+    config_path: str = args.config
     key: str = args.key
     needle_path: str = args.needle
     haystack_path: str = args.haystack
     output_path: str = args.output
-    model: str = args.model
     token_path: str = args.token
 
     # Load the API token
@@ -105,14 +107,20 @@ if __name__ == '__main__':
         print('Error loading token file "{}": {}'.format(token_path, str(e)))
         exit(1)
 
-    params: Params = Params(model, token, debug_dir if debug_flag else None, verbose_flag, dry_run_flag)
+    # Load the configuration
+    try:
+        config: Config = load_config(config_path)
+    except Exception as e:
+        print('Error loading configuration file "{}": {}'.format(config_path, str(e)))
+        exit(1)
 
 
     # Initialize the environment
     init_env(Path(debug_dir))
 
     try:
-        w: Whisperer = Whisperer(params)
+        params: Params = Params(token, debug_dir if debug_flag else None, verbose_flag, dry_run_flag)
+        w: Whisperer = Whisperer(params, config)
     except ValueError as e:
         print('Error initializing Whisperer: {}'.format(str(e)))
         exit(1)

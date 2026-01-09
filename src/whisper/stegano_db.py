@@ -12,6 +12,8 @@ class Section:
     original_text: str
     expected_bit: Optional[Bit]
     traduction: Optional[str]
+    algo: Optional[str] = None
+    hash: Optional[str] = None
 
 class SteganoDb:
 
@@ -27,7 +29,9 @@ class SteganoDb:
                                                                 "position" INTEGER NOT NULL,
                                                                 "original_text" TEXT NOT NULL,
                                                                 "expected_bit" integer DEFAULT NULL,
-                                                                "traduction" TEXT DEFAULT NULL)
+                                                                "traduction" TEXT DEFAULT NULL,
+                                                                "algo" TEXT DEFAULT NULL,
+                                                                "hash" TEXT DEFAULT NULL)
                                """)
             finally:
                 cursor.close()
@@ -69,10 +73,10 @@ class SteganoDb:
             cursor.close()
         self.db.commit()
 
-    def set_traduction(self, position: int, traduction: str) -> None:
+    def set_traduction(self, position: int, traduction: str, algo: str, h: bytes) -> None:
         cursor = self.db.cursor()
         try:
-            cursor.execute('UPDATE t SET "traduction"=? WHERE "position"=?', (traduction, position,))
+            cursor.execute('UPDATE t SET "traduction"=?, "algo"=?, "hash"=? WHERE "position"=?', (traduction, algo, h.hex(), position,))
         finally:
             cursor.close()
         self.db.commit()
@@ -80,12 +84,12 @@ class SteganoDb:
     def get_section_by_position(self, position: int) -> Section:
         cursor = self.db.cursor()
         try:
-            row = cursor.execute('SELECT "idx", "position", "original_text", "expected_bit", "traduction" FROM t WHERE "position"=?', (position,)).fetchone()
+            row = cursor.execute('SELECT "idx", "position", "original_text", "expected_bit", "traduction", "algo", "hash" FROM t WHERE "position"=?', (position,)).fetchone()
             if row is None:
                 raise ValueError("Invalid position: {}".format(position))
         finally:
             cursor.close()
-        return Section(position=row[1], original_text=row[2], expected_bit=row[3], traduction=row[4])
+        return Section(position=row[1], original_text=row[2], expected_bit=row[3], traduction=row[4], algo=row[5], hash=row[6])
 
     def __len__(self) -> int:
         cursor = self.db.cursor()
@@ -98,7 +102,7 @@ class SteganoDb:
     def get_sections(self) -> Generator[Section, None, None]:
         cursor = self.db.cursor()
         try:
-            for row in cursor.execute('SELECT "idx", "position", "original_text", "expected_bit", "traduction" FROM t ORDER BY "position"'):
-                yield Section(position=row[1], original_text=row[2], expected_bit=row[3], traduction=row[4])
+            for row in cursor.execute('SELECT "idx", "position", "original_text", "expected_bit", "traduction", "algo", "hash" FROM t ORDER BY "position"'):
+                yield Section(position=row[1], original_text=row[2], expected_bit=row[3], traduction=row[4], algo=row[5], hash=row[6])
         finally:
             cursor.close()

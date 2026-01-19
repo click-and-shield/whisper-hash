@@ -253,7 +253,7 @@ Reveal the message:
 
 * needle: [message.txt](test-data/needle.txt)
 * cover message: [cover-message.txt](test-data/cover-message.txt)
-* haystack: [output.1.txt](test-data/output.txt)
-* configuration: [config.1.yaml](test-data/config.yaml)
+* haystack: [output.txt](test-data/output.txt)
+* configuration: [config.yaml](test-data/config.yaml)
 * debug data: [debug.tar](test-data/debug.tar)
 

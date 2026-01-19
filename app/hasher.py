@@ -7,27 +7,24 @@ SEARCH_PATH=os.path.abspath(os.path.join(CURRENT_DIR, os.path.pardir, 'src'))
 print("Set search path: {}".format(SEARCH_PATH))
 sys.path.insert(0, SEARCH_PATH)
 
-from whisper.hasher import Hasher
+from whisper.hasher import Hasher, ALGORITHMS
 
 
 # Parse the command line arguments
-parser = argparse.ArgumentParser(description='Hide a text file within a generated text file.')
-parser.add_argument('input',
+parser = argparse.ArgumentParser(description='Test the Hasher class.')
+parser.add_argument('key',
                     type=str,
-                    help='path to input file')
-parser.add_argument('algo',
-                    type=str,
-                    help='name of the hashing algorithm to use')
+                    help='the secret key')
 
 args = parser.parse_args()
-input_path: str = args.input
-algo: str = args.algo
+secret_key: str = args.key
 
-with open(input_path, "r") as f:
-    content = f.read()
+hasher = Hasher(secret_key, verbose=True)
+print('{}'.format(hasher.key.hex()))
+for i in range(len(hasher.key)):
+    p: int = hasher.key[i] % len(ALGORITHMS)
+    print('| %-2d | %-3d | %-2d | %-10s |' % (i, hasher.key[i], p, ALGORITHMS[p]))
+print('\n\n')
 
-hasher = Hasher(algo)
-h, bit = hasher.get_parity(algo, content)
-print("hash: {}".format(h.hex()))
-print("bit:  {}\n".format(bit))
+hasher.get_parity("md5", "Le lecteur découvre très vite que le temps lui-même est suspect. Les horloges qui sonnent treize heures ou l’indication d’événements quotidiens perturbés donnent le sentiment que la réalité a été modifiée, que les conventions et les repères élémentaires ne sont plus fiables. Ce décalage subtil prépare le terrain à l’angoisse et à l’incertitude qui imprègnent tout le récit.")
 

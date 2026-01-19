@@ -1,9 +1,9 @@
 # Usage:
 #
 #   DRY-RUM:
-#      python hide.py --debug --dry-run --verbose --token /home/dev/.token ../test-data/config.yaml secret-key ../test-data/needle.txt ../test-data/haystack.txt output.txt
+#      python hide.py --debug --dry-run --verbose --token /home/dev/.token ../test-data/config.yaml secret-key ../test-data/needle.txt ../test-data/cover-message.txt output.txt
 #   NORMAL-RUN:
-#      python hide.py --debug --verbose --token /home/dev/.token ../test-data/config.yaml secret-key ../test-data/needle.txt ../test-data/haystack.txt output.txt
+#      python hide.py --debug --verbose --token /home/dev/.token ../test-data/config.yaml secret-key ../test-data/needle.txt ../test-data/cover-message.txt output.txt
 
 from typing import Optional
 import argparse

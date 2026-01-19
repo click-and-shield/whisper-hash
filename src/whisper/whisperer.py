@@ -23,28 +23,6 @@ class Params:
     verbose: bool = False
     dry_run: bool = False
 
-REQ_TEMPERATURE: float = 0.7
-
-REQ_SYSTEM: str = """
-Tu es un écrivain professionnel.
-
-1. La sortie finale doit être STRICTEMENT un JSON valide:
-
-   {
-      "result": "..."
-   }
- 
-2. Aucun commentaire, aucun texte explicatif, aucun Markdown, aucun texte supplémentaire.
-
-3. Même si la requête est strictement identique à une requête précédente, produire une
-   reformulation nouvelle, distincte et non redondante, tout en conservant fidèlement le sens.
-
-   Reformulation précédente à ne pas reproduire:
-
-   {PREVIOUS_REFORMULATION}
-"""
-
-
 class Message:
     """Implementation of the OpenAI ChatCompletion API message format.
     This message is characterized by its role its type:

@@ -5,7 +5,7 @@
 This project explores the sophisticated intersection of Large Language Models (LLMs) and steganography.
 It implements a keyed steganographic approach, where a secret message is embedded within a "haystack" of generated text, recoverable only by those in possession of a specific secret key.
 
-While earlier iterations—such as *whisper-parity* and *whisper-verse*—produced outputs that were relatively easy to identify as steganographic carriers, this project focuses on high-fidelity stealth.
+While earlier iterations—such as [whisper-parity](https://github.com/click-and-shield/whisper-parity) and [whisper-verse](https://github.com/click-and-shield/whisper-verse)—produced outputs that were relatively easy to identify as steganographic carriers, this project focuses on high-fidelity stealth.
 By generating text that closely mimics natural linguistic patterns, it ensures that hidden messages remain remarkably difficult to detect, making systematic analysis prohibitively resource-intensive.
 
 Key Terminology:
@@ -14,8 +14,6 @@ Key Terminology:
 - **Cover Message**: The original text body used as a template or source to generate the haystack.
 
 ## How it works
-
-### Overview
 
 ### Overview
 
@@ -29,13 +27,13 @@ The algorithm operates using the following components:
 The steganographic process follows these steps:
 
 1.  **Binary Encoding**: The "needle" is converted into a raw bitstream.
-2.  **Key Derivation**: A 32-byte master key (*k*) is derived from the secret key using the Argon2id algorithm.
+2.  **Key Derivation**: A 32-byte master key (*k*) is derived from the secret key using the _Argon2_ algorithm.
 3.  **Haystack Construction**:
     For each bit (*b*) at position (*p*) in the bitstream (the bitstream being the binary representation of the "needle"):
     1.  The *p*-th paragraph (*P*) of the cover message is selected.
     2.  A specific hash function (*H*) is chosen from the suite based on the current state of the key (*k*) and the position (*p*).
     3.  The paragraph is hashed: $R = H(P)$.
-    4.  To increase computational complexity and security, the result is processed again: $S = Argon2id(R)$.
+    4.  To increase computational complexity and security, the result is processed again: $S = Argon2(R)$.
     5.  A parity bit (*B*) is calculated by summing the bytes of $R$ modulo 2 ($B = \sum R \pmod 2$).
     6.  **Bit Matching**:
         *   If $B$ matches the target bit $b$, the paragraph $P$ is accepted into the final haystack.
@@ -44,6 +42,18 @@ The steganographic process follows these steps:
 > **Note on Key Evolution**: The derived key *k* is dynamic. Once the position *p* exceeds the key length (32 bytes), *k* is updated by XOR-combining its current value with the most recent hash *S*.
 >
 > For technical implementation details, please consult [hasher.py](src/whisper/hasher.py).
+
+## Possible improvements
+
+Currently, the script does not distinguish between structural elements such as titles, subtitles, or paragraphs.
+Instead, it treats all content as generic "text sections" eligible for reformulation (see [text_file_tool.py](src/whisper/text_file_tool.py)).
+This is a limitation that could be addressed by implementing a more sophisticated parser.
+
+> At present, the parsing logic is rudimentary, relying solely on newline characters (`\n`) to segment the text.
+> Integrating a more advanced parser—supporting formats like [Markdown](https://pypi.org/project/Markdown/), for instance—would be a significant enhancement.
+> This would allow specific elements, such as headings or blockquotes, to be preserved intact, leading to the generation of more realistic and structurally consistent "haystacks."
+
+To further complicate detection, we could incorporate a wider variety of hashing functions. Currently, we rely exclusively on standard algorithms provided by the Python library. However, since cryptographic security is not a priority for this use case, implementing custom hashing methods remains a viable alternative.
 
 ### Detailed description
 
@@ -109,7 +119,7 @@ Code:
 
 > See [code](src/whisper/hasher.py) for more details.
 
-Result (for the secret key "secret-key"): `7db00b8e2ee8259f55c08aed633659ab0f8a555de3ae9f6e0bc69d0f18fdecec`
+Result (for the secret key "`secret-key`"): `7db00b8e2ee8259f55c08aed633659ab0f8a555de3ae9f6e0bc69d0f18fdecec`
 
 The list of hashing functions contains 11 elements (See variable `ALGORITHMS` [here](src/whisper/hasher.py)).
 
@@ -117,51 +127,53 @@ The list of hashing functions contains 11 elements (See variable `ALGORITHMS` [h
 ALGORITHMS: list[str] = ['md5', 'sha224', 'sha256', 'sha384', 'sha512', 'sha512_224', 'sha512_256', 'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512']
 ```
 
-| *index* | *byte* | *position in list of hash function* | *hash function* |
-|---------|--------|-------------------------------------|-----------------|
-| 0       | 125    | 4 (125 % 11)                        | sha512          |
-| 1       | 176    | 0 (176 % 11)                        | md5             |
-| 2       | 11     | 0 (11 % 11)                         | md5             |
-| 3       | 142    | 10                                  | sha3_512        |
-| 4       | 46     | 2                                   | sha256          |
-| 5       | 232    | 1                                   | sha224          |
-| 6       | 37     | 4                                   | sha512          |
-| 7       | 159    | 5                                   | sha512_224      |
-| 8       | 85     | 8                                   | sha3_256        |
-| 9       | 192    | 5                                   | sha512_224      |
-| 10      | 138    | 6                                   | sha512_256      |
-| 11      | 237    | 6                                   | sha512_256      |
-| 12      | 99     | 0                                   | md5             |
-| 13      | 54     | 10                                  | sha3_512        |
-| 14      | 89     | 1                                   | sha224          |
-| 15      | 171    | 6                                   | sha512_256      |
-| 16      | 15     | 4                                   | sha512          |
-| 17      | 138    | 6                                   | sha512_256      |
-| 18      | 85     | 8                                   | sha3_256        |
-| 19      | 93     | 5                                   | sha512_224      |
-| 20      | 227    | 7                                   | sha3_224        |
-| 21      | 174    | 9                                   | sha3_384        |
-| 22      | 159    | 5                                   | sha512_224      |
-| 23      | 110    | 0                                   | md5             |
-| 24      | 11     | 0                                   | md5             |
-| 25      | 198    | 0                                   | md5             |
-| 26      | 157    | 3                                   | sha384          |
-| 27      | 15     | 4                                   | sha512          |
-| 28      | 24     | 2                                   | sha256          |
-| 29      | 253    | 0                                   | md5             |
-| 30      | 236    | 5                                   | sha512_224      |
-| 31      | 236    | 5                                   | sha512_224      |
+| *index* | *key byte (hex)* | *key byte (dec)* | *position in list of hash function* | *hash function*                |
+|---------|------------------|------------------|-------------------------------------|--------------------------------|
+| `0`     | `7d`             | `125`            | `125 % 11 = 4`                      | `ALGORITHMS[ 4]`: `sha512`     |
+| `1`     | `b0`             | `176`            | `176 % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `2`     | `b`              | `11`             | `11  % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `3`     | `8e`             | `142`            | `142 % 11 = 10`                     | `ALGORITHMS[10]`: `sha3_512`   |
+| `4`     | `2e`             | `46`             | `46  % 11 = 2`                      | `ALGORITHMS[ 2]`: `sha256`     |
+| `5`     | `e8`             | `232`            | `232 % 11 = 1`                      | `ALGORITHMS[ 1]`: `sha224`     |
+| `6`     | `25`             | `37`             | `37  % 11 = 4`                      | `ALGORITHMS[ 4]`: `sha512`     |
+| `7`     | `9f`             | `159`            | `159 % 11 = 5`                      | `ALGORITHMS[ 5]`: `sha512_224` |
+| `8`     | `55`             | `85`             | `85  % 11 = 8`                      | `ALGORITHMS[ 8]`: `sha3_256`   |
+| `9`     | `c0`             | `192`            | `192 % 11 = 5`                      | `ALGORITHMS[ 5]`: `sha512_224` |
+| `10`    | `8a`             | `138`            | `138 % 11 = 6`                      | `ALGORITHMS[ 6]`: `sha512_256` |
+| `11`    | `ed`             | `237`            | `237 % 11 = 6`                      | `ALGORITHMS[ 6]`: `sha512_256` |
+| `12`    | `63`             | `99`             | `99  % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `13`    | `36`             | `54`             | `54  % 11 = 10`                     | `ALGORITHMS[10]`: `sha3_512`   |
+| `14`    | `59`             | `89`             | `89  % 11 = 1`                      | `ALGORITHMS[ 1]`: `sha224`     |
+| `15`    | `ab`             | `171`            | `171 % 11 = 6`                      | `ALGORITHMS[ 6]`: `sha512_256` |
+| `16`    | `f`              | `15`             | `15  % 11 = 4`                      | `ALGORITHMS[ 4]`: `sha512`     |
+| `17`    | `8a`             | `138`            | `138 % 11 = 6`                      | `ALGORITHMS[ 6]`: `sha512_256` |
+| `18`    | `55`             | `85`             | `85  % 11 = 8`                      | `ALGORITHMS[ 8]`: `sha3_256`   |
+| `19`    | `5d`             | `93`             | `93  % 11 = 5`                      | `ALGORITHMS[ 5]`: `sha512_224` |
+| `20`    | `e3`             | `227`            | `227 % 11 = 7`                      | `ALGORITHMS[ 7]`: `sha3_224`   |
+| `21`    | `ae`             | `174`            | `174 % 11 = 9`                      | `ALGORITHMS[ 9]`: `sha3_384`   |
+| `22`    | `9f`             | `159`            | `159 % 11 = 5`                      | `ALGORITHMS[ 5]`: `sha512_224` |
+| `23`    | `6e`             | `110`            | `110 % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `24`    | `b`              | `11`             | `11  % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `25`    | `c6`             | `198`            | `198 % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `26`    | `9d`             | `157`            | `157 % 11 = 3`                      | `ALGORITHMS[ 3]`: `sha384`     |
+| `27`    | `f`              | `15`             | `15  % 11 = 4`                      | `ALGORITHMS[ 4]`: `sha512`     |
+| `28`    | `18`             | `24`             | `24  % 11 = 2`                      | `ALGORITHMS[ 2]`: `sha256`     |
+| `29`    | `fd`             | `253`            | `253 % 11 = 0`                      | `ALGORITHMS[ 0]`: `md5`        |
+| `30`    | `ec`             | `236`            | `236 % 11 = 5`                      | `ALGORITHMS[ 5]`: `sha512_224` |
+| `31`    | `ec`             | `236`            | `236 % 11 = 5`                      | `ALGORITHMS[ 5]`: `sha512_224` |
 
 Thus:
 
-* The first hash function used will be `sha512`.
-* The second hash function used will be `md5`.
-* The third hash function used will be `md5`.
+The hashing sequence proceeds as follows:
+* **1st iteration:** `sha512`
+* **2nd iterations:** `md5`
+* **3rd iterations:** `md5`
 * ...
-* The 32-th hash function used will be `sha512_224`.
+* **32nd iteration:** `sha512_224`
 
-> The 33-th hash function used is unknown at this point.
-> Read the overview: _The derived key *k* is dynamic. Once the position *p* exceeds the key length (32 bytes), *k* is updated by XOR-combining its current value with the most recent hash *S*._
+> **Note:**
+> The hash function for the 33rd iteration and beyond is determined dynamically.
+> As outlined in the overview: the derived key *k* is dynamic. Whenever the position *p* exceeds the 32-byte key length, *k* is updated by XOR-combining its current value with the most recent hash *S*.
 
 #### Haystack Construction
 
@@ -235,8 +247,7 @@ You need:
 - Install the dependencies: `pip install -e .`.
 - Verify that everything is working fine: `python -m unittest discover tests/`
 
-> *Note*:
-> - Create the file "requirements.txt": `pip freeze > requirements.txt`
+> Create the file "`requirements.txt`": `pip freeze > requirements.txt`
 
 ### Run the scripts
 
